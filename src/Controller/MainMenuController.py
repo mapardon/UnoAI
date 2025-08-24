@@ -12,8 +12,8 @@ class MainMenuController:
         Controller for main menu screen (game mode and agents selection)
     """
     def __init__(self):
-        self.cur_parameters: dict = {"cur_game_mode": str(), "cur_player1": str(),
-                                     "cur_player2": str(), "cur_player3": str()}
+        self.cur_parameters: dict[str, GameModes | str | None] = {"cur_game_mode": None, "cur_player1": None,
+                                                                  "cur_player2": None, "cur_player3": None}
         self.view: MainMenuView = MainMenuView()
         self.exit_request: bool = False
         self.run_request: bool = False
@@ -33,11 +33,11 @@ class MainMenuController:
                                                                                       self.cur_parameters["cur_player2"],
                                                                                       self.cur_parameters["cur_player3"]],
                                                     self.cur_parameters["cur_game_mode"], feedback)
-            feedback = self._analyze_input(raw_user_input)
+            feedback = self._parse_input(raw_user_input)
 
         return "exit" if self.exit_request else self.run_request
 
-    def _analyze_input(self, raw_user_input: str) -> str:
+    def _parse_input(self, raw_user_input: str) -> str:
         """
             Analyze and process user input.
 
@@ -61,8 +61,8 @@ class MainMenuController:
             else:
                 command, arg =  raw_user_input, str()
 
-            input_ok, feedback = self._check_user_input_valid(command, arg)
-            if not input_ok:
+            input_error, feedback = self._check_user_input_valid(command, arg)
+            if input_error:
                     raise ArgumentError
         except Exception:
             return feedback
@@ -94,38 +94,38 @@ class MainMenuController:
             verification of the input
         """
 
-        sentinel: bool
+        sentinel: bool  # true if error
         feedback: str = str()
 
         # Command is player selection
         if "player" in command:
-            sentinel = command in ["player1", "player2", "player3"] and arg in retrieve_agent_names() + AgentTypes
-            if not sentinel:
+            sentinel = command not in ["player1", "player2", "player3"] or arg not in retrieve_agent_names() + AgentTypes
+            if sentinel:
                 feedback = "Unknown player"
             else:
-                sentinel = not (arg == "human" and self.cur_parameters["cur_game_mode"] != "play")
-                if not sentinel:
+                sentinel = arg == "human" and self.cur_parameters["cur_game_mode"] not in ("play", None)
+                if sentinel:
                     feedback = "Human cannot be selected for train and compare modes"
 
         # Command is game mode selection
         elif command == "mode":
-            sentinel = arg in GameModes
-            if not sentinel:
+            sentinel = arg not in GameModes
+            if sentinel:
                 feedback = "Unknown game mode"
             else:
-                sentinel = not (arg in ["train", "compare"] and "human" in self.cur_parameters.values())
-                if not sentinel:
+                sentinel = arg in ["train", "compare"] and "human" in self.cur_parameters.values()
+                if sentinel:
                     feedback = "Human cannot be selected for train and compare modes"
 
         # Command is run (parameters must be complete to launch game)
         elif command == "run":
-            sentinel = None not in self.cur_parameters.values()
-            if not sentinel:
+            sentinel = None in self.cur_parameters.values()
+            if sentinel:
                 feedback = "Missing parameters to run game"
 
         # Command is exit (nothing special)
         elif command == "exit":
-            sentinel = True
+            sentinel = False
             feedback = str()
 
         # Something else (input is not correct)

@@ -20,7 +20,7 @@ Current selection:
  - Game mode: {cur_game_mode}
 
  
-Input instructions: <run | [[player[1|2|3] | mode] [player/agent | game mode]] | exit>
+Input instructions: <run | [[player[1|2|3] | mode] [<player/agent> | <game-mode>]] | exit>
 Feedback: {feedback}
  > """
 
